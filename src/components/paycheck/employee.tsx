@@ -5,7 +5,7 @@ interface Props {
     employee: EmployeeProps;
     dependents?: EmployeeProps['dependents']
     handleAddDependent: () => void;
-    handleSave: () => Promise<void>;
+    handleSave: (value?: number) => Promise<void>;
     handleSetValueDependent: (value: EmployeeProps['dependents']) => void;
     isEditing: number | null;
     onEdit: (value: number | null) => void;
@@ -42,7 +42,7 @@ export const Employee: React.FC<Props> = ({ employee, onDelete, onSave, isEditin
                     <button onClick={handleAddDependent} className="mr-2 bg-green-500 text-white py-2 px-4 rounded">
                         Add Dependent
                     </button>
-                    <button onClick={handleSave} className="bg-blue-500 text-white py-2 px-4 rounded">Save</button>
+                    <button onClick={() => handleSave()} className="bg-blue-500 text-white py-2 px-4 rounded">Save</button>
                 </>
             ) : (
                 <>
@@ -53,7 +53,7 @@ export const Employee: React.FC<Props> = ({ employee, onDelete, onSave, isEditin
                     <button onClick={() => {
                         if(!!isEditing && isEditing !== employee.id) {
                             if(window.confirm('Please save your changes before starting editing another user')) {
-                                void handleSave();
+                                void handleSave(employee.id);
                             }
                         } else {
                             onEdit(employee.id);

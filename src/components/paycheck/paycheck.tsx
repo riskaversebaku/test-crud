@@ -19,13 +19,13 @@ export const Paycheck: React.FC = () => {
         }
     }, [data, dependents, isEditing])
 
-    const handleSave = async () => {
+    const handleSave = async (value?: number) => {
         const empl = data?.find(({ id }) => id === isEditing)
 
         if(empl) {
             await putData({ id: empl.id, data: { ...empl, dependents: (dependents || []) } })
             await refetch();
-            setIsEditing(null);
+            setIsEditing(value ?? null);
         }
     };
 
