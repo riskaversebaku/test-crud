@@ -1,33 +1,24 @@
 import React, { useState } from 'react';
 import type { EmployeeProps } from "./types";
-import { useGetData, usePutData } from "./paycheckQueries";
 
 interface Props {
     employee: EmployeeProps;
+    dependents?: EmployeeProps['dependents']
+    handleAddDependent: () => void;
+    handleSave: () => Promise<void>;
+    handleSetValueDependent: (value: EmployeeProps['dependents']) => void;
+    isEditing: number | null;
+    onEdit: (value: number | null) => void;
     onDelete: (id: number) => void;
     onSave?: ({ id, data }: { id: EmployeeProps['id'], data: EmployeeProps }) => Promise<Array<EmployeeProps>>;
 }
 
-export const Employee: React.FC<Props> = ({ employee, onDelete, onSave }) => {
-    const [isEditing, setIsEditing] = useState(false);
+export const Employee: React.FC<Props> = ({ employee, onDelete, onSave, isEditing, onEdit, dependents, handleAddDependent, handleSetValueDependent, handleSave }) => {
     const [name, setName] = useState(employee.name);
-    const [dependents, setDependents] = useState(employee.dependents);
-    const { refetch } = useGetData();
-    const { mutateAsync: putData } = usePutData();
-
-    const handleAddDependent = () => {
-        setDependents([...dependents, { id: Date.now(), name: '' }]);
-    };
-
-    const handleSave = async () => {
-        await putData({ id: employee.id, data: { ...employee, dependents } })
-        await refetch();
-        setIsEditing(false);
-    };
-
+    
     return (
         <div className="p-4 border rounded-md mb-4">
-            {isEditing ? (
+            {isEditing === employee.id ? (
                 <>
                     <input
                         type="text"
@@ -35,7 +26,7 @@ export const Employee: React.FC<Props> = ({ employee, onDelete, onSave }) => {
                         onChange={(e) => setName(e.target.value)}
                         className="border border-blue-500 mr-2"
                     />
-                    {dependents.map((dep, index) => (
+                    {dependents?.map((dep, index) => (
                         <input
                             key={dep.id}
                             type="text"
@@ -43,7 +34,7 @@ export const Employee: React.FC<Props> = ({ employee, onDelete, onSave }) => {
                             onChange={(e) => {
                                 const newDependents = [...dependents];
                                 newDependents[index].name = e.target.value;
-                                setDependents(newDependents);
+                                handleSetValueDependent(newDependents)
                             }}
                             className="border border-blue-500 mr-2"
                         />
@@ -59,7 +50,15 @@ export const Employee: React.FC<Props> = ({ employee, onDelete, onSave }) => {
                     {employee.dependents.map((dep) => (
                         <p key={dep.id}>{dep.name}</p>
                     ))}
-                    <button onClick={() => setIsEditing(true)} className="mr-2 bg-blue-500 text-white py-2 px-4 rounded">
+                    <button onClick={() => {
+                        if(!!isEditing && isEditing !== employee.id) {
+                            if(window.confirm('Please save your changes before starting editing another user')) {
+                                void handleSave();
+                            }
+                        } else {
+                            onEdit(employee.id);
+                        }
+                    }} className="mr-2 bg-blue-500 text-white py-2 px-4 rounded">
                         Edit
                     </button>
                     <button onClick={() => onDelete(employee.id)} className="mr-2 bg-red-500 text-white py-2 px-4 rounded">Delete</button>

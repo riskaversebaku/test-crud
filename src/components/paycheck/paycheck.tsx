@@ -1,14 +1,41 @@
-import React, { useState, useCallback } from 'react';
-import { useDeleteData, useGetData, usePostData } from './paycheckQueries';
+import React, { useState, useCallback, useEffect } from 'react';
+import {useDeleteData, useGetData, usePostData, usePutData} from './paycheckQueries';
 import { Dependent, EmployeeProps } from './types';
 import { Employee } from './employee';
 
 export const Paycheck: React.FC = () => {
     const { data, error, isLoading, refetch } = useGetData();
     const { mutateAsync: postData } = usePostData();
+    const { mutateAsync: putData } = usePutData();
     const { mutateAsync: deleteData } = useDeleteData();
+    const [isEditing, setIsEditing] = useState<number | null>(null);
 
+    const [dependents, setDependents] = useState(data?.find(({ id }) => id === isEditing)?.dependents);
     const [newEmployeeName, setNewEmployeeName] = useState('');
+
+    useEffect(() => {
+        if(!dependents) {
+            setDependents(data?.find(({ id }) => id === isEditing)?.dependents)
+        }
+    }, [data, dependents, isEditing])
+
+    const handleSave = async () => {
+        const empl = data?.find(({ id }) => id === isEditing)
+
+        if(empl) {
+            await putData({ id: empl.id, data: { ...empl, dependents: (dependents || []) } })
+            await refetch();
+            setIsEditing(null);
+        }
+    };
+
+    const handleSetValueDependent = (value: EmployeeProps['dependents']) => {
+        setDependents(value);
+    }
+
+    const handleAddDependent = () => {
+        setDependents([...(dependents || []), { id: Date.now(), name: '' }]);
+    };
 
     const handleAddEmployee = useCallback(async () => {
         const newEmployee: EmployeeProps = {
@@ -55,7 +82,7 @@ export const Paycheck: React.FC = () => {
                 <button onClick={handleAddEmployee} className="bg-blue-500 text-white py-2 px-4 rounded">Add Employee</button>
             </div>
             {data?.map((emp) => (
-                <Employee key={emp.id} employee={emp} onDelete={handleDeleteEmployee} />
+                <Employee handleSave={handleSave} isEditing={isEditing} key={emp.id} employee={emp} dependents={dependents} onDelete={handleDeleteEmployee} handleAddDependent={handleAddDependent} handleSetValueDependent={handleSetValueDependent} onEdit={(val) => setIsEditing(val)} />
             ))}
             <div className="mt-4">
                 <h2>Total Cost Per Paycheck:</h2>
